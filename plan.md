@@ -69,7 +69,7 @@ This document outlines the development milestones and testing strategies for the
 
 ---
 
-## Milestone 4: Command-Line Interface Enhancements (66% Complete)
+## Milestone 4: Command-Line Interface Enhancements (100% Complete)
 
 *   **Goal:** Fully implement the defined command-line arguments (`--oneway`, `--update`, `--threads`) and validation.
 
@@ -98,18 +98,19 @@ This document outlines the development milestones and testing strategies for the
         *   Tests parsing `--oneway` succeeds and selects the correct mode.
         *   Tests running with both `--update` and `--oneway` results in a command-line parsing error.
 
-### Milestone 4c: `--threads` Option (0% Complete)
+### Milestone 4c: `--threads` Option (100% Complete)
 *   **Goal:** Define and validate the `--threads` option.
 *   **Tasks:**
-    *   Define `--threads <N>` option (integer) with a default value (e.g., `Environment.ProcessorCount`).
-    *   Add validation to ensure the value is a positive integer.
-    *   Update handler to receive the thread count.
-    *   (Optional for M4) Pass thread count to `SyncEngine` (logic still pending M6).
+    *   [X] Define `--threads <N>` option (integer) with a default value (`Environment.ProcessorCount`).
+    *   [X] Add validation to ensure the value is a positive integer.
+    *   [X] Update handler to receive the thread count.
+    *   [ ] (Optional for M4) Pass thread count to `SyncEngine` (logic still pending M6) - *Deferred to M6*.
 *   **Test Plan:**
-    *   **(Manual/Automated):** Verify `--help` shows the `--threads` option with its description and default.
-    *   **(Automated):** Test parsing with valid `--threads` values (e.g., `--threads 4`).
-    *   **(Automated):** Test parsing with invalid values (e.g., `--threads 0`, `--threads -1`, `--threads abc`) results in errors.
-    *   **(Automated):** Test running without `--threads` uses the default.
+    *   [X] **(Manual/Automated):** Verify `--help` shows the `--threads` option with its description and default.
+    *   [X] **(Automated):** Run `scripts/verify_milestone4c.sh`.
+        *   Tests parsing with valid `--threads` values.
+        *   Tests parsing with invalid values (`0`, `-1`, `abc`) results in errors.
+        *   Tests running without `--threads` uses the default.
 
 ---
 

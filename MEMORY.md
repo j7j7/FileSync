@@ -41,6 +41,7 @@ A command-line file synchronization tool built with C#.
 *   **`scripts/verify_milestone3.sh`**: Automated tests for `--update` mode synchronization logic.
 *   **`scripts/verify_milestone4a.sh`**: Automated tests for `--update` CLI option and default behavior.
 *   **`scripts/verify_milestone4b.sh`**: Automated tests for `--oneway` CLI option parsing and mutual exclusion.
+*   **`scripts/verify_milestone4c.sh`**: Automated tests for `--threads` CLI option parsing and validation.
 
 ## CLI Arguments & Options
 
@@ -48,6 +49,7 @@ A command-line file synchronization tool built with C#.
 *   `destination` (Argument, Required): Destination directory.
 *   `--update` (Option, Boolean): Explicitly select update mode (default).
 *   `--oneway` (Option, Boolean): Explicitly select one-way sync mode (mutually exclusive with --update).
+*   `--threads <N>` (Option, Int32): Number of threads (default: processor count, must be > 0).
 *   `--help`, `--version` (Built-in)
 
 ## Code Structure
