@@ -26,7 +26,7 @@ run_app() {
     local tmp_out=$(mktemp)
     local tmp_err=$(mktemp)
     # Run with --log parameter once implemented, for now capture console
-    if dotnet run --project "$PROJECT_DIR/$APP_NAME.csproj" -- "$@" > "$tmp_out" 2> "$tmp_err"; then
+    if dotnet run --project "$PROJECT_DIR/$APP_NAME.csproj" -- "$@" --test > "$tmp_out" 2> "$tmp_err"; then
         eval $__exit_code_var=0
     else
         local exit_status=$?

@@ -1,6 +1,7 @@
 using FileSync.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,18 +17,22 @@ public class DirectoryScanner
     /// Asynchronously scans the specified directory recursively and returns metadata for all files and subdirectories.
     /// </summary>
     /// <param name="directoryPath">The absolute path of the directory to scan.</param>
+    /// <param name="progress">Optional progress reporter.</param>
     /// <returns>A list of FileMetadata objects representing the items found.</returns>
     /// <exception cref="DirectoryNotFoundException">Thrown if the specified directory does not exist.</exception>
     /// <remarks>
     /// This method currently executes synchronously despite the async signature, returning a completed task.
     /// True asynchronicity might be added later if needed, potentially with parallel enumeration.
     /// Errors accessing specific files/subdirectories are logged to Console.Error and the item is skipped.
+    /// TotalItems in progress reports will be -1 as the total count isn't known upfront with this iterative scan.
     /// </remarks>
-    public Task<List<FileMetadata>> ScanDirectoryAsync(string directoryPath)
+    public Task<List<FileMetadata>> ScanDirectoryAsync(string directoryPath, IProgress<ProgressReport>? progress = null)
     {
+        var stopwatch = Stopwatch.StartNew();
         var rootDirectoryInfo = new DirectoryInfo(directoryPath);
         if (!rootDirectoryInfo.Exists)
         {
+            stopwatch.Stop();
             throw new DirectoryNotFoundException($"Directory not found: {directoryPath}");
         }
 
@@ -40,6 +45,7 @@ public class DirectoryScanner
         string normalizedRootPath = Path.GetFullPath(directoryPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
         int rootPathLength = normalizedRootPath.Length;
 
+        long itemsProcessed = 0;
 
         while (directoriesToScan.Count > 0)
         {
@@ -72,6 +78,19 @@ public class DirectoryScanner
                             IsDirectory = isDirectory,
                             Attributes = fsInfo.Attributes
                         });
+
+                        itemsProcessed++;
+
+                        // Report progress
+                        progress?.Report(new ProgressReport(
+                            Phase: "Scanning",
+                            ItemsProcessed: itemsProcessed,
+                            TotalItems: -1,
+                            BytesProcessed: 0,
+                            TotalBytes: 0,
+                            ElapsedTime: stopwatch.Elapsed,
+                            CurrentFile: relativePath
+                        ));
 
                         // If it's a directory, add it to the stack to scan its contents
                         if (isDirectory)
@@ -107,6 +126,7 @@ public class DirectoryScanner
             }
         }
 
+        stopwatch.Stop();
         // Although the method is synchronous internally, we return a completed task
         // to match the async method signature.
         return Task.FromResult(metadataList);

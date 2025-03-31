@@ -114,56 +114,73 @@ This document outlines the development milestones and testing strategies for the
 
 ---
 
-## Milestone 5: `--oneway` Mode Implementation (0% Complete)
+## Milestone 5: `--oneway` Mode Implementation (100% Complete)
 *   **Goal:** Add the logic for the `--oneway` synchronization mode, including deletions.
 *   **Tasks:**
-    *   Extend the comparison logic to identify files/directories present in the destination but *not* in the source.
-    *   Implement logic to delete these extra files/directories from the destination when `--oneway` is active.
-    *   Ensure deletions happen *after* necessary copies. Add safety checks/logging.
+    *   [X] Extend the comparison logic to identify files/directories present in the destination but *not* in the source.
+    *   [X] Implement logic to delete these extra files/directories from the destination when `--oneway` is active.
+    *   [X] Ensure deletions happen *after* necessary copies (and deletes process deeper items first).
 *   **Test Plan:**
-    *   **(Unit Tests):** Test the logic for identifying items to be deleted.
-    *   **(Integration Tests):** Test the full scan -> compare -> copy/delete process for `--oneway` mode.
-    *   **(Manual):** Run the tool with `--oneway` on various test cases:
-        *   Destination with extra files/folders (should be deleted).
-        *   Destination matching source (no changes).
-        *   Mix of updates and deletions needed.
-    *   **(CRITICAL):** Manually verify deletions are correct and expected before widespread use. Use test directories!
+    *   [ ] **(Unit Tests):** (Future) Test the logic for identifying items to be deleted.
+    *   [X] **(Integration Tests):** Covered by `scripts/verify_milestone5.sh`.
+    *   [X] **(Manual):** (Covered by script) Run the tool with `--oneway` on various test cases:
+        *   [X] Destination with extra files/folders (should be deleted).
+        *   [ ] Destination matching source (no changes) - *Implicitly tested by lack of delete actions in output/logs, enhance script if needed*.
+        *   [X] Mix of updates and deletions needed.
+    *   [X] **(CRITICAL):** (Handled by script for basic cases) Manually verify deletions are correct.
 
 ---
 
-## Milestone 6: Multithreading Implementation (65% Complete)
+## Milestone 6: Multithreading Implementation (100% Complete - Correctness Verified)
 
 *   **Goal:** Introduce parallel processing for scanning and file operations to improve performance.
 *   **Tasks:**
-    *   Refactor scanning logic to potentially use parallel enumeration (e.g., `Parallel.ForEach`).
-    *   Implement a producer-consumer pattern or task-based parallelism for file operations (copying/deleting).
-    *   Use the `--threads` argument to control the degree of parallelism. Implement a sensible default if not provided.
-    *   Ensure thread safety, especially when accessing shared data structures or performing file system operations.
+    *   [ ] Refactor scanning logic to potentially use parallel enumeration - *Deferred*. (Current iterative scan is reasonably efficient).
+    *   [X] Implement parallel execution for file operations (`CopyFile`, `DeleteFile`, `DeleteDirectory`) in `SyncEngine` using `Parallel.ForEachAsync`.
+    *   [X] Use the `--threads` argument to control the degree of parallelism (`MaxDegreeOfParallelism`).
+    *   [X] Ensure basic thread safety for file operations (handled by processing types sequentially and parallelizing within types).
 *   **Test Plan:**
-    *   **(Performance Testing):** Measure sync time with and without multithreading (varying `--threads`) on large datasets. Verify performance improvement.
-    *   **(Stress Testing):** Run with high thread counts and complex directories to check stability and race conditions.
-    *   **(Manual):** Verify sync results are identical regardless of thread count used.
-    *   **(Code Review):** Focus on thread safety aspects.
+    *   [ ] **(Performance Testing):** (Future improvement) Measure sync time with varying `--threads` on large datasets.
+    *   [ ] **(Stress Testing):** (Future improvement) Run with high thread counts and complex directories.
+    *   [X] **(Manual/Automated):** Run `scripts/verify_milestone6.sh`.
+        *   Verifies sync results are identical regardless of thread count used (default, 1, 4).
+    *   [ ] **(Code Review):** (Recommended) Focus on thread safety aspects.
 
 ---
 
-## Milestone 7: Real-time Status Display (75% Complete)
+## Milestone 7: Real-time Status Display (50% Complete)
 
-*   **Goal:** Implement the single-line, real-time console status updates.
+*   **Goal:** Implement the single-line, real-time console status updates, with an option to revert to detailed logging for testing.
+
+### Milestone 7a: `--test` Flag and Conditional Logging (100% Complete)
+*   **Goal:** Add a `--test` flag to control output verbosity.
 *   **Tasks:**
-    *   Design the status line format (current file, progress bar, counts, time).
-    *   Integrate progress reporting into scanning and file operation loops.
-    *   Use console manipulation techniques (e.g., `Console.SetCursorPosition`, carriage return `\r`) to update the line dynamically.
-    *   Calculate total items for progress estimation early in the process.
-    *   Calculate elapsed and estimated remaining time.
-    *   Ensure the status display works correctly with multithreading (thread-safe updates).
+    *   [X] Define `--test` option (boolean flag) in `Program.cs`.
+    *   [X] Pass `isTestMode` boolean to `SyncEngine` (and potentially `DirectoryScanner`).
+    *   [X] Make existing `Console.WriteLine` logs within core logic conditional on `isTestMode`.
+    *   [X] Update existing verification scripts (`verify_milestone3.sh` through `verify_milestone6.sh`) to use the `--test` flag.
 *   **Test Plan:**
-    *   **(Manual):** Run sync operations on directories of varying sizes and observe the status line. Verify:
-        *   All elements (file name, counts, time, progress bar) update correctly.
-        *   The line updates smoothly without excessive flickering.
-        *   The final status accurately reflects completion.
-        *   It works correctly during long file copies.
-    *   **(Integration Tests):** Potentially capture console output (if possible in test environment) to verify format.
+    *   [X] **(Manual/Automated):** Verify `--help` shows the `--test` option.
+    *   [X] **(Automated):** Run `scripts/verify_milestone7a.sh` successfully.
+    *   [X] **(Automated):** Re-run verification scripts 3-6; they should pass by using the `--test` flag and seeing the expected detailed logs.
+    *   [X] **(Manual/Automated):** Run a sync *without* `--test` and verify that the detailed logs are *not* shown (output should be minimal for now) - *Covered by verify_milestone7a.sh*.
+
+### Milestone 7b: Status Display Implementation (0% Complete)
+*   **Goal:** Implement the single-line status display when `--test` is *not* present.
+*   **Tasks:**
+    *   Define `ProgressReport` class/struct (e.g., current item, progress %, count, total, elapsed/ETA).
+    *   Add `IProgress<ProgressReport>` parameters to `ScanDirectoryAsync` and `SynchronizeAsync`.
+    *   Implement progress reporting calls within `DirectoryScanner` and `SyncEngine` loops (thread-safe updates needed in `SyncEngine`).
+    *   Implement console rendering logic in `Program.cs` (using `Console.SetCursorPosition`, etc.) triggered by the `IProgress` handler, only if `isTestMode` is false.
+    *   Calculate total items/bytes for progress estimation.
+    *   Calculate elapsed and estimated remaining time.
+*   **Test Plan:**
+    *   **(Manual):** Run sync operations *without* `--test` on directories of varying sizes and observe the status line. Verify:
+        *   All elements update correctly.
+        *   The line updates smoothly.
+        *   The final status is correct.
+        *   It works during long operations.
+    *   **(Integration Tests):** (Difficult/Low ROI) Consider skipping automated tests for dynamic console output.
 
 ---
 

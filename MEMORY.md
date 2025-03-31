@@ -16,6 +16,7 @@ A command-line file synchronization tool built with C#.
 *   High performance and efficiency (utilizing multithreading).
     *   Initial directory scanning must use only metadata (no file content reading).
 *   Real-time, single-line text status display during sync (progress, counts, time).
+    *   Provide `--test` flag to revert to detailed step-by-step console logging for verification.
 *   Synchronization based on newer source file timestamps.
 *   Handles cloud storage stub files (e.g., OneDrive, Dropbox).
 
@@ -31,10 +32,13 @@ A command-line file synchronization tool built with C#.
 *   **`FileSync.Core.DirectoryScanner`**: Class with `ScanDirectoryAsync` method to iteratively scan directories using metadata only.
     *   Handles basic access errors.
     *   Integrated into `FileSync.App`.
-*   **`FileSync.Core.SyncEngine`**: Class with `SynchronizeAsync(..., SyncMode mode)` method to compare metadata and perform sync actions.
-    *   Currently implements `--update` logic (copies new/newer files).
-    *   Accepts `SyncMode` parameter.
-    *   Uses `File.Copy` for file operations.
+*   **`FileSync.Core.SyncEngine`**: Class with `SynchronizeAsync(..., SyncMode mode, int threadCount)` method.
+    *   Implements `--update` logic (copies new/newer files).
+    *   Implements `--oneway` logic (copies new/newer, deletes extra destination items).
+    *   Uses `Parallel.ForEachAsync` for file copy/delete operations, respecting `threadCount`.
+    *   Directory creation remains sequential.
+    *   Accepts `SyncMode` and `threadCount` parameters.
+    *   Uses `File.Copy`, `File.Delete`, `Directory.Delete(recursive)`.
     *   Integrated into `FileSync.App`.
 *   **`scripts/verify_milestone1.sh`**: Automated tests for project setup and basic CLI arguments.
 *   **`scripts/verify_milestone2.sh`**: Automated tests for directory scanning functionality.
@@ -42,6 +46,8 @@ A command-line file synchronization tool built with C#.
 *   **`scripts/verify_milestone4a.sh`**: Automated tests for `--update` CLI option and default behavior.
 *   **`scripts/verify_milestone4b.sh`**: Automated tests for `--oneway` CLI option parsing and mutual exclusion.
 *   **`scripts/verify_milestone4c.sh`**: Automated tests for `--threads` CLI option parsing and validation.
+*   **`scripts/verify_milestone5.sh`**: Automated tests for `--oneway` mode synchronization logic (including deletions).
+*   **`scripts/verify_milestone6.sh`**: Automated tests for multithreading correctness (ensures sync works with different thread counts).
 
 ## CLI Arguments & Options
 
@@ -50,6 +56,7 @@ A command-line file synchronization tool built with C#.
 *   `--update` (Option, Boolean): Explicitly select update mode (default).
 *   `--oneway` (Option, Boolean): Explicitly select one-way sync mode (mutually exclusive with --update).
 *   `--threads <N>` (Option, Int32): Number of threads (default: processor count, must be > 0).
+*   `--test` (Option, Boolean): Output detailed logs instead of single-line progress status.
 *   `--help`, `--version` (Built-in)
 
 ## Code Structure
